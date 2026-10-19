@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AUTH_ROUTES } from "@/constants/auth";
 import {
   markNotificationReadAction,
   sendMessageAction,
@@ -36,6 +37,8 @@ function useAction() {
     if (result.ok) {
       setDone(success);
       router.refresh();
+    } else if (result.kycRequired) {
+      router.push(AUTH_ROUTES.signupVerification);
     } else {
       setError(result.message);
     }

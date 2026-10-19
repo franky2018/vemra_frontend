@@ -12,6 +12,8 @@ export type ActionFailure = {
   requestId?: string | null;
   code?: string | null;
   fieldErrors?: Readonly<Record<string, string>>;
+  /** True when the backend refused the call with `KYC_REQUIRED`. */
+  kycRequired?: true;
 };
 
 export type ActionResult<T> = { ok: true; data: T } | ActionFailure;
@@ -20,6 +22,7 @@ export function toActionFailure(error: unknown): ActionFailure {
   const fieldErrors = isApiError(error) ? error.fieldErrors : null;
   const requestId = errorRequestId(error);
   const code = errorCode(error);
+  const kycRequired = isApiError(error) && error.code === "KYC_REQUIRED";
 
   captureError(error, { requestId, code, scope: "server-action" });
 
@@ -33,5 +36,6 @@ export function toActionFailure(error: unknown): ActionFailure {
     ...(requestId === null ? {} : { requestId }),
     ...(code === null ? {} : { code }),
     ...(fieldErrors === null ? {} : { fieldErrors }),
+    ...(kycRequired ? { kycRequired: true as const } : {}),
   };
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ResponsiveText } from "@/components/ui/responsive-text";
+import { AUTH_ROUTES } from "@/constants/auth";
 import { PAY_RENT } from "@/constants/tenant-payments";
 import { initiateRentPaymentAction } from "@/lib/api/actions/payments";
 import type { PaymentBreakdown } from "@/lib/api/actions/payments";
@@ -28,6 +30,7 @@ export interface PayRentFormProps {
 }
 
 export function PayRentForm({ leaseId }: PayRentFormProps) {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [breakdown, setBreakdown] = useState<PaymentBreakdown | null>(null);
@@ -54,6 +57,11 @@ export function PayRentForm({ leaseId }: PayRentFormProps) {
         const result = await initiateRentPaymentAction(leaseId, key);
 
         if (!result.ok) {
+          if (result.kycRequired) {
+            router.push(AUTH_ROUTES.signupVerification);
+            setIsSubmitting(false);
+            return;
+          }
           setError(result.message);
           setIsSubmitting(false);
           return;

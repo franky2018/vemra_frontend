@@ -6,7 +6,7 @@ import { toActionFailure } from "@/lib/api/actions/action-result";
 import type { ActionResult } from "@/lib/api/actions/action-result";
 import { unwrapData } from "@/lib/api/adapters";
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { requireRole } from "@/lib/api/resources/auth";
+import { requireKycApproved, requireRole } from "@/lib/api/resources/auth";
 import { apiPost } from "@/lib/api/server";
 import { isUuid } from "@/lib/validation";
 
@@ -33,6 +33,10 @@ export async function submitApplicationAction(
   if (!isUuid(submission.propertyId)) {
     return { ok: false, message: "That property could not be found." };
   }
+
+  await requireKycApproved(
+    `/tenant/apply?propertyId=${submission.propertyId}`,
+  );
 
   const documents = submission.documents
     .map((document) => ({

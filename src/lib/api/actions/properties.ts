@@ -7,7 +7,7 @@ import type { ActionResult } from "@/lib/api/actions/action-result";
 import type { TicketFileInput } from "@/lib/api/actions/media";
 import { unwrapData } from "@/lib/api/adapters";
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { requireRole } from "@/lib/api/resources/auth";
+import { requireKycApproved, requireRole } from "@/lib/api/resources/auth";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api/server";
 import { isAllowedDeliveryUrl } from "@/lib/media/cloudinary";
 import { maxBytesFor, validateFile } from "@/lib/media/scopes";
@@ -58,6 +58,8 @@ export interface MediaUpdate {
 export async function createPropertyAction(
   draft: PropertyDraft,
 ): Promise<ActionResult<{ propertyId: string }>> {
+  await requireKycApproved("/landlord/properties/new");
+
   try {
     await requireRole("LANDLORD");
 
@@ -87,6 +89,8 @@ export async function updatePropertyAction(
   propertyId: string,
   update: PropertyUpdate,
 ): Promise<ActionResult<null>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }
@@ -109,6 +113,8 @@ export async function createMediaTicketAction(
   propertyId: string,
   input: TicketFileInput,
 ): Promise<ActionResult<UploadTicket>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }
@@ -146,6 +152,8 @@ export async function attachMediaAction(
   isMain: boolean,
   order: number,
 ): Promise<ActionResult<null>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }
@@ -176,6 +184,8 @@ export async function updateMediaAction(
   mediaId: string,
   update: MediaUpdate,
 ): Promise<ActionResult<null>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }
@@ -208,6 +218,8 @@ export async function deleteMediaAction(
   propertyId: string,
   mediaId: string,
 ): Promise<ActionResult<null>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }
@@ -229,6 +241,8 @@ export async function deleteMediaAction(
 export async function publishPropertyAction(
   propertyId: string,
 ): Promise<ActionResult<null>> {
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
+
   if (!isUuid(propertyId)) {
     return { ok: false, message: INVALID_PROPERTY };
   }

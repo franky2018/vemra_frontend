@@ -7,6 +7,8 @@ import { PropertiesOverviewTable } from "@/features/landlord/properties-overview
 import { RevenueRollCard } from "@/features/landlord/revenue-roll-card";
 import { StatCardGrid } from "@/features/landlord/stat-card-grid";
 import { WithdrawWidget } from "@/features/landlord/withdraw-widget";
+import { KycBanner } from "@/features/kyc/kyc-banner";
+import { getKycState } from "@/lib/api/resources/auth";
 import {
   getLandlordDashboard,
   getLandlordProperties,
@@ -26,9 +28,10 @@ export default async function LandlordOverviewPage({
     return <EmptyDashboard />;
   }
 
-  const [dashboard, properties] = await Promise.all([
+  const [dashboard, properties, kyc] = await Promise.all([
     getLandlordDashboard(),
     getLandlordProperties(),
+    getKycState(),
   ]);
 
   if (!dashboard.ok) {
@@ -47,6 +50,8 @@ export default async function LandlordOverviewPage({
   return (
     <div className="flex flex-col gap-5 md:gap-8">
       <DashboardHeader dashboard={dashboard.data} />
+
+      <KycBanner state={kyc} role="LANDLORD" />
 
       <StatCardGrid dashboard={dashboard.data} />
 

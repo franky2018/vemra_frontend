@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AUTH_ROUTES } from "@/constants/auth";
 import {
   addMaintenanceMediaAction,
   reportMaintenanceAction,
@@ -109,6 +110,12 @@ export function MaintenanceReportForm({
     });
 
     if (!reported.ok) {
+      if (reported.kycRequired) {
+        router.push(AUTH_ROUTES.signupVerification);
+        setStage(null);
+        setIsSubmitting(false);
+        return;
+      }
       setError(reported.message);
       setFieldErrors({ ...(reported.fieldErrors ?? {}) });
       setStage(null);
@@ -141,6 +148,12 @@ export function MaintenanceReportForm({
       );
 
       if (!attached.ok) {
+        if (attached.kycRequired) {
+          router.push(AUTH_ROUTES.signupVerification);
+          setStage(null);
+          setIsSubmitting(false);
+          return;
+        }
         setError(
           `The issue was reported, but its photos could not be attached: ${attached.message}`,
         );

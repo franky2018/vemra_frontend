@@ -1,13 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { AUTH_ROUTES } from "@/constants/auth";
 import type { ActionResult } from "@/lib/api/actions/action-result";
 import { validateFile } from "@/lib/media/scopes";
 import { isUploadCancelled, uploadToCloudinary } from "@/lib/media/upload";
 import type { MediaScope, UploadTicket, UploadedAsset } from "@/types/api/media";
 
 export type UploadPhase = "idle" | "preparing" | "uploading" | "done" | "error";
+
+/** Thrown when a ticket request is refused with `KYC_REQUIRED`. */
+class KycRedirect extends Error {}
 
 /**
  * Mints a ticket for one file. This is always a server action: the browser
@@ -41,6 +46,7 @@ export function useMediaUpload(
   scope: MediaScope,
   requestTicket: TicketRequest,
 ): MediaUpload {
+  const router = useRouter();
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<UploadPhase>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -75,17 +81,28 @@ export function useMediaUpload(
       setPhase("preparing");
       const ticket = await requestTicket(file);
       if (!ticket.ok) {
+        if (ticket.kycRequired) {
+          router.push(AUTH_ROUTES.signupVerification);
+          throw new KycRedirect("kyc_required");
+        }
         throw new Error(ticket.message);
       }
 
       setPhase("uploading");
       return uploadToCloudinary(file, ticket.data, { onProgress, signal });
     },
-    [scope, requestTicket],
+    [scope, requestTicket, router],
   );
 
   const settle = useCallback((cause: unknown): null => {
     controllerRef.current = null;
+
+    if (cause instanceof KycRedirect) {
+      setPhase("idle");
+      setProgress(0);
+      setError(null);
+      return null;
+    }
 
     if (isUploadCancelled(cause)) {
       setPhase("idle");

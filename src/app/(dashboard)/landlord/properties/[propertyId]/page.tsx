@@ -13,6 +13,7 @@ import { ManageListingForm } from "@/features/landlord/manage-listing-form";
 import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/format";
 import { getLandlordProperty } from "@/lib/api/resources/landlord";
+import { requireKycApproved } from "@/lib/api/resources/auth";
 import { isUuid } from "@/lib/validation";
 
 const { breadcrumbLabel, listedSincePrefix } = LANDLORD_MANAGE_LISTING;
@@ -44,6 +45,8 @@ export default async function ManageListingPage({
   if (!isUuid(propertyId)) {
     notFound();
   }
+
+  await requireKycApproved(`/landlord/properties/${propertyId}`);
 
   const property = await getLandlordProperty(propertyId);
 

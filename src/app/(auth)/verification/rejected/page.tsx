@@ -3,11 +3,8 @@ import type { Metadata } from "next";
 import { AlertTriangleIcon } from "@/components/icons/alert-triangle-icon";
 import { VERIFICATION_REJECTED_SCREEN } from "@/constants/auth";
 import { VerificationStatus } from "@/features/auth/verification-status";
-import {
-  kycReviewRows,
-  reviewRowsFor,
-} from "@/features/auth/verification-steps";
-import { getAccount } from "@/lib/api/resources/auth";
+import { kycReviewRows } from "@/features/auth/verification-steps";
+import { getKycState } from "@/lib/api/resources/auth";
 
 export const metadata: Metadata = {
   title: "One document needs a fix · Vemra",
@@ -17,8 +14,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function VerificationRejectedPage() {
-  const account = await getAccount();
-  const rows = account ? reviewRowsFor(account) : kycReviewRows("REJECTED");
+  const kyc = await getKycState();
+  const rows = kycReviewRows(kyc.kycStatus ?? "REJECTED", kyc.applicantMessage);
 
   return (
     <VerificationStatus
@@ -26,8 +23,7 @@ export default async function VerificationRejectedPage() {
       icon={<AlertTriangleIcon />}
       title={VERIFICATION_REJECTED_SCREEN.title}
       description={
-        account?.onboarding.applicantMessage ??
-        VERIFICATION_REJECTED_SCREEN.description
+        kyc.applicantMessage ?? VERIFICATION_REJECTED_SCREEN.description
       }
       cardLabel={VERIFICATION_REJECTED_SCREEN.cardLabel}
       rows={rows}

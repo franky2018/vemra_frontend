@@ -3,7 +3,11 @@
 import { toActionFailure } from "@/lib/api/actions/action-result";
 import type { ActionResult } from "@/lib/api/actions/action-result";
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { requireRole, requireSession } from "@/lib/api/resources/auth";
+import {
+  requireKycApproved,
+  requireRole,
+  requireSession,
+} from "@/lib/api/resources/auth";
 import { apiPost } from "@/lib/api/server";
 import { maxBytesFor, validateFile } from "@/lib/media/scopes";
 import { readUploadTicket } from "@/lib/media/ticket";
@@ -90,6 +94,7 @@ export async function createApplicationDocumentTicketAction(
   input: TicketFileInput,
 ): Promise<ActionResult<UploadTicket>> {
   await requireRole("TENANT");
+  await requireKycApproved("/tenant/apply");
 
   return mintTicket(
     "APPLICATIONS",

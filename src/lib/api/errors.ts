@@ -13,6 +13,7 @@ export const ERROR_CODES = [
   "NOT_IMPLEMENTED",
   "SERVICE_UNAVAILABLE",
   "FEATURE_NOT_ENABLED",
+  "KYC_REQUIRED",
   "CAUTION_DEPOSIT_POLICY_UNCONFIGURED",
   "SETTING_NOT_CONFIGURED",
   "SETTING_VALUE_INVALID",
@@ -116,6 +117,10 @@ export function isFeatureNotEnabled(error: unknown): boolean {
   return isApiError(error) && error.code === "FEATURE_NOT_ENABLED";
 }
 
+export function isKycRequired(error: unknown): boolean {
+  return isApiError(error) && error.code === "KYC_REQUIRED";
+}
+
 export function isValidationError(error: unknown): boolean {
   if (!isApiError(error)) {
     return false;
@@ -141,6 +146,8 @@ const CODE_MESSAGES: Partial<Record<ErrorCode, string>> = {
   NOT_IMPLEMENTED: "This is not available yet.",
   SERVICE_UNAVAILABLE: "Vemra is having trouble right now. Please try again shortly.",
   FEATURE_NOT_ENABLED: "This feature is not enabled on your account yet.",
+  KYC_REQUIRED:
+    "Complete your identity verification to continue.",
   CAUTION_DEPOSIT_POLICY_UNCONFIGURED:
     "Vemra has not set a caution deposit policy for this property yet.",
   SETTING_NOT_CONFIGURED: "Vemra has not finished configuring this yet.",

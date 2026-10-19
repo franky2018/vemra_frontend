@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { MediaPreview } from "@/components/media/media-preview";
 import { Button } from "@/components/ui/button";
+import { AUTH_ROUTES } from "@/constants/auth";
 import {
   attachMediaAction,
   createMediaTicketAction,
@@ -61,7 +62,9 @@ export function ListingMediaManager({
 
   const run = async (
     key: string,
-    action: () => Promise<{ ok: true } | { ok: false; message: string }>,
+    action: () => Promise<
+      { ok: true } | { ok: false; message: string; kycRequired?: true }
+    >,
     success: string,
   ) => {
     setBusy(key);
@@ -72,6 +75,10 @@ export function ListingMediaManager({
     setBusy(null);
 
     if (!result.ok) {
+      if (result.kycRequired) {
+        router.push(AUTH_ROUTES.signupVerification);
+        return;
+      }
       setError(result.message);
       return;
     }
@@ -114,6 +121,10 @@ export function ListingMediaManager({
         order,
       );
       if (!attached.ok) {
+        if (attached.kycRequired) {
+          router.push(AUTH_ROUTES.signupVerification);
+          return;
+        }
         failures.push(attached.message);
       }
       isFirst = false;

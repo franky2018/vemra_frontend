@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { buttonClasses } from "@/components/ui/button";
+import { KycGate } from "@/components/kyc/kyc-gate";
 import { ResponsiveText } from "@/components/ui/responsive-text";
 import type { TabItem } from "@/components/ui/tabs";
 import { Tabs } from "@/components/ui/tabs";
+import { AUTH_ROUTES } from "@/constants/auth";
 import {
   LANDLORD_PROPERTIES_SCREEN,
 } from "@/constants/landlord";
 import { LoadErrorPanel } from "@/features/errors/load-error-panel";
 import { PropertiesPanel } from "@/features/landlord/properties-panel";
+import { getKycState } from "@/lib/api/resources/auth";
 import { getLandlordProperties } from "@/lib/api/resources/landlord";
 import type { LandlordPropertySummary } from "@/types/api/landlord";
 
@@ -32,7 +35,10 @@ function filterProperties(
 }
 
 export default async function LandlordPropertiesPage() {
-  const properties = await getLandlordProperties();
+  const [properties, kyc] = await Promise.all([
+    getLandlordProperties(),
+    getKycState(),
+  ]);
   const items: TabItem[] = filters.map((filter) => {
     const filteredProperties = properties.ok
       ? filterProperties(filter.id, properties.data)
@@ -57,14 +63,21 @@ export default async function LandlordPropertiesPage() {
           </p>
         </div>
 
-        <Link
-          href={addAction.href}
-          className={buttonClasses({
-            className: "max-md:h-7 max-md:px-3 max-md:text-label-sm",
-          })}
+        <KycGate
+          approved={kyc.approved}
+          href={AUTH_ROUTES.signupVerification}
+          label="Add property"
+          description="Complete identity verification to list properties."
         >
-          <ResponsiveText copy={addAction.label} />
-        </Link>
+          <Link
+            href={addAction.href}
+            className={buttonClasses({
+              className: "max-md:h-7 max-md:px-3 max-md:text-label-sm",
+            })}
+          >
+            <ResponsiveText copy={addAction.label} />
+          </Link>
+        </KycGate>
       </div>
 
       {properties.ok ? (

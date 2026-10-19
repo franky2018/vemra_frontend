@@ -130,6 +130,29 @@ export interface OnboardingState {
   applicantMessage: string | null;
 }
 
+/** `GET /kyc/me` — the authoritative record of the caller's KYC case. */
+export interface KycMe {
+  id: string;
+  userId: string;
+  status: KycStatus;
+  attemptsRemaining: number | null;
+  applicantMessage: string | null;
+  decisionReason: string | null;
+  maskedNin: string | null;
+  decidedAt: Iso8601 | null;
+  createdAt: Iso8601;
+  updatedAt: Iso8601;
+}
+
+/** Normalised KYC status used across the app, from `/kyc/me` then `/me`. */
+export interface KycState {
+  approved: boolean;
+  kycStatus: KycStatus | null;
+  nextStep: OnboardingNextStep;
+  attemptsRemaining: number | null;
+  applicantMessage: string | null;
+}
+
 
 export interface AccountProfile {
   userId: string;
@@ -167,5 +190,20 @@ export interface KycSubmissionPayload {
 export interface KycSubmissionResult {
   id: string;
   status: KycStatus;
+}
+
+export interface NinVerificationInput {
+  nin: string;
+  firstName: string;
+  lastName: string;
+  dob?: string;
+  phone?: string;
+  gender?: string;
+}
+
+export type NinVerificationOutcome = "approve" | "failed" | "pending";
+
+export interface NinVerificationResult {
+  success: NinVerificationOutcome;
 }
 

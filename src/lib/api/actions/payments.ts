@@ -3,7 +3,7 @@
 import { toActionFailure } from "@/lib/api/actions/action-result";
 import type { ActionResult } from "@/lib/api/actions/action-result";
 import { ENDPOINTS } from "@/lib/api/endpoints";
-import { requireRole } from "@/lib/api/resources/auth";
+import { requireKycApproved, requireRole } from "@/lib/api/resources/auth";
 import { payInitiationSchema, parseOrThrow } from "@/lib/api/schemas";
 import { apiPost } from "@/lib/api/server";
 import { unwrapData } from "@/lib/api/adapters";
@@ -33,6 +33,8 @@ export async function initiateRentPaymentAction(
   leaseId: string,
   idempotencyKey: string,
 ): Promise<ActionResult<PaymentInitiation>> {
+  await requireKycApproved("/tenant/payment-plan");
+
   if (!isUuid(leaseId)) {
     return { ok: false, message: INVALID_LEASE };
   }

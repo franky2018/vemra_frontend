@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AUTH_ROUTES } from "@/constants/auth";
 import { LANDLORD_MANAGE_LISTING, LANDLORD_ROUTES } from "@/constants/landlord";
 import {
   unlistPropertyAction,
@@ -74,6 +75,11 @@ export function ManageListingForm({ property }: ManageListingFormProps) {
 
         if (result.ok) {
           router.push(LANDLORD_ROUTES.properties);
+          return;
+        }
+
+        if (result.kycRequired) {
+          router.push(AUTH_ROUTES.signupVerification);
           return;
         }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { APPLICATION_DOCUMENT_TYPES } from "@/constants/applications";
+import { AUTH_ROUTES } from "@/constants/auth";
 import { submitApplicationAction } from "@/lib/api/actions/applications";
 import { createApplicationDocumentTicketAction } from "@/lib/api/actions/media";
 import { acceptAttribute, describeLimits, validateFile } from "@/lib/media/scopes";
@@ -109,6 +110,10 @@ export function ApplicationForm({
     setIsSubmitting(false);
 
     if (!result.ok) {
+      if (result.kycRequired) {
+        router.push(AUTH_ROUTES.signupVerification);
+        return;
+      }
       setError(result.message);
       return;
     }

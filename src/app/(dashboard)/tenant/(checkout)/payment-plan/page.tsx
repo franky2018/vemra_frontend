@@ -8,6 +8,7 @@ import { CheckoutSummaryPanel } from "@/features/tenant/checkout-summary-panel";
 import { LeasePicker } from "@/features/tenant/lease-picker";
 import { PayRentForm } from "@/features/tenant/pay-rent-form";
 import { LoadErrorPanel } from "@/features/errors/load-error-panel";
+import { requireKycApproved } from "@/lib/api/resources/auth";
 import { getLease, resolveLeaseSelection } from "@/lib/api/resources/tenant";
 import type { CheckoutSummary } from "@/types/api/tenant";
 
@@ -26,6 +27,8 @@ function firstValue(value: string | string[] | undefined): string | null {
 export default async function TenantPaymentPlanPage({
   searchParams,
 }: PageProps<"/tenant/payment-plan">) {
+  await requireKycApproved("/tenant/payment-plan");
+
   const params = await searchParams;
   const selection = await resolveLeaseSelection(firstValue(params.leaseId));
 

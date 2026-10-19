@@ -6,7 +6,11 @@ import { useCallback, useId, useState } from "react";
 
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createKycUploadGrantAction, submitKycAction } from "@/lib/api/actions/kyc";
+import {
+  createKycUploadGrantAction,
+  submitKycAction,
+  verifyNinAction,
+} from "@/lib/api/actions/kyc";
 import { AuthCard } from "@/features/auth/auth-card";
 import { KYC_CHECKS } from "@/features/auth/verification-steps";
 import { acceptAttribute, describeLimits } from "@/lib/media/scopes";
@@ -14,7 +18,7 @@ import { useMediaUpload } from "@/lib/media/use-media-upload";
 import { cn } from "@/lib/cn";
 import type { AccountProfile, KycDocumentInput } from "@/types/api/auth";
 
-type Phase = "idle" | "uploading" | "submitting" | "done";
+type Phase = "idle" | "verifying" | "uploading" | "submitting" | "done";
 
 export interface KycUploadFormProps {
   account: AccountProfile;
@@ -46,7 +50,8 @@ export function KycUploadForm({ account, className, skipHref }: KycUploadFormPro
   );
   const upload = useMediaUpload("KYC", requestTicket);
 
-  const isBusy = phase === "uploading" || phase === "submitting";
+  const isBusy =
+    phase === "verifying" || phase === "uploading" || phase === "submitting";
   const hasRequiredFile = files.IDENTITY !== undefined && files.IDENTITY !== null;
   const problem = error ?? upload.error;
 
@@ -80,6 +85,28 @@ export function KycUploadForm({ account, className, skipHref }: KycUploadFormPro
       setError(
         "Fill in your first name, last name, NIN (VNIN), date of birth and current address.",
       );
+      return;
+    }
+
+    setPhase("verifying");
+    const ninResult = await verifyNinAction({
+      nin: nin.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      ...(dob.trim() !== "" ? { dob: dob.trim() } : {}),
+    });
+
+    if (!ninResult.ok) {
+      setError(ninResult.message);
+      setPhase("idle");
+      return;
+    }
+
+    if (ninResult.data.success === "failed") {
+      setError(
+        "We could not verify your NIN with those details. Check the number, your name and date of birth, then try again.",
+      );
+      setPhase("idle");
       return;
     }
 
@@ -200,11 +227,13 @@ export function KycUploadForm({ account, className, skipHref }: KycUploadFormPro
         disabled={!hasRequiredFile}
         onClick={handleSubmit}
       >
-        {phase === "uploading"
-          ? `Uploading documents… ${upload.progress}%`
-          : phase === "submitting"
-            ? "Submitting for review…"
-            : "Submit for review"}
+        {phase === "verifying"
+          ? "Verifying your NIN…"
+          : phase === "uploading"
+            ? `Uploading documents… ${upload.progress}%`
+            : phase === "submitting"
+              ? "Submitting for review…"
+              : "Submit for review"}
       </Button>
 
       <Link

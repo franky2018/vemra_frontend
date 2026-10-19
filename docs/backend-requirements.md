@@ -235,3 +235,44 @@ Cloudflare Turnstile is wired into login, signup and forgot-password via Supabas
 backend change is required for auth. If any `/public/**` write route
 (`POST /public/waitlist`, `POST /public/contact`) should be captcha-protected, it needs a
 documented token field â€” there is none today, and both routes are `security: []`.
+
+## 13. KYC status must be reported by `/me` and enforced on protected routes
+
+**Severity: critical (a frontend-only gate is bypassable).**
+
+The frontend now gates listing and renting actions on an approved KYC case
+(`requireKycApproved` plus `KycGate`), and reads the status from `GET /kyc/me`
+first, falling back to `GET /me` ? `onboarding.kycStatus`. That is a UX guard
+only: anyone with a valid token can call the API directly.
+
+Required:
+
+- **A. `/me` should report the real KYC status.** `GET /me` currently may return
+  `onboarding.kycStatus: null` even for approved users. It must return the same
+  status as `GET /kyc/me` (`PENDING`, `SUBMITTED`, `UNDER_REVIEW`,
+  `ACTION_REQUIRED`, `APPROVED`, `REJECTED`, `EXPIRED`) and keep
+  `attemptsRemaining` and `applicantMessage` in sync. The frontend treats an
+  unknown status as **not approved**, so a null status blocks verified users
+  from listing and renting.
+- **B. Protected routes should reject unverified users with `403` and
+  `error.code = "KYC_REQUIRED"`** (tenant and landlord roles only; staff are
+  exempt). At minimum:
+  - Landlord: `POST /properties`, `PATCH /properties/{propertyId}`,
+    `POST /properties/{propertyId}/publish`,
+    `POST /properties/{propertyId}/media/ticket`, and the media
+    create/update/delete routes.
+  - Tenant: `POST /applications`, `POST /applications/documents/ticket`,
+    `POST /leases/{leaseId}/sign`, `POST /leases/{leaseId}/pay`,
+    `POST /leases/{leaseId}/payment-plan`, and the deposit decision routes.
+  - Add `KYC_REQUIRED` to the `ErrorCode` enum. The frontend already maps it to a
+    typed `kycRequired` action failure and redirects to the verification flow.
+- **C. `POST /kyc/verify-nin`** returns `{ success: "approve" | "failed" |
+  "pending" }`. Document what `pending` means (asynchronous NIN check?) and
+  whether the client should then submit documents or poll. The frontend treats
+  `approve` and `pending` as “continue to submission”, and `failed` as a
+  blocking error.
+- **D. `GET /kyc/me`** should remain the source of truth and keep returning
+  `status`, `attemptsRemaining`, `applicantMessage`, `decisionReason`,
+  `maskedNin`, `decidedAt`, `createdAt`, `updatedAt`. The frontend depends on
+  these for the pending and rejected screens (the rejection reason is shown from
+  `applicantMessage`/`decisionReason`).

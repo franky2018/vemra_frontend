@@ -7,6 +7,7 @@ import { useCallback, useRef, useState } from "react";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AUTH_ROUTES } from "@/constants/auth";
 import { LANDLORD_ROUTES } from "@/constants/landlord";
 import {
   attachMediaAction,
@@ -194,6 +195,12 @@ export function ListPropertyFlow({ initialStep }: { initialStep: Step }) {
     const created = await createPropertyAction(draft);
 
     if (!created.ok) {
+      if (created.kycRequired) {
+        router.push(AUTH_ROUTES.signupVerification);
+        setProgress(null);
+        setIsPublishing(false);
+        return;
+      }
       setError(created.message);
       setFieldErrors({ ...(created.fieldErrors ?? {}) });
       setProgress(null);
@@ -228,6 +235,12 @@ export function ListPropertyFlow({ initialStep }: { initialStep: Step }) {
           index,
         );
         if (!attached.ok) {
+          if (attached.kycRequired) {
+            router.push(AUTH_ROUTES.signupVerification);
+            setProgress(null);
+            setIsPublishing(false);
+            return;
+          }
           setError(
             `The listing was created but photo ${index + 1} could not be attached: ${attached.message}`,
           );
@@ -242,6 +255,12 @@ export function ListPropertyFlow({ initialStep }: { initialStep: Step }) {
     const published = await publishPropertyAction(propertyId);
 
     if (!published.ok) {
+      if (published.kycRequired) {
+        router.push(AUTH_ROUTES.signupVerification);
+        setProgress(null);
+        setIsPublishing(false);
+        return;
+      }
       setError(
         `The listing was created but could not be published: ${published.message}`,
       );
